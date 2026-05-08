@@ -299,7 +299,7 @@ class SigmaRAGPipeline:
         )
         block = response.content[0]
         assert isinstance(block, _anthropic.types.TextBlock)
-        return block.text.strip()
+        return str(block.text).strip()
 
     def _generate_openai(self, question: str, context: str) -> str:
         """Generate using the OpenAI Chat Completions API."""
