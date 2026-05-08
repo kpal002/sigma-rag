@@ -109,7 +109,7 @@ class SigmaRAGPipeline:
             self.model = "echo"
 
         # Eagerly instantiate LLM clients (fail fast, not on first query)
-        self._llm_client = None
+        self._llm_client: object = None
         if llm == "anthropic":
             if not os.environ.get("ANTHROPIC_API_KEY"):
                 logger.warning(
@@ -119,11 +119,11 @@ class SigmaRAGPipeline:
             else:
                 try:
                     import anthropic as _anthropic
+
                     self._llm_client = _anthropic.Anthropic()
                 except ImportError:
                     logger.warning(
-                        "anthropic package not installed. "
-                        "Install with: pip install anthropic"
+                        "anthropic package not installed. Install with: pip install anthropic"
                     )
         elif llm == "openai":
             if not os.environ.get("OPENAI_API_KEY"):
@@ -131,12 +131,10 @@ class SigmaRAGPipeline:
             else:
                 try:
                     from openai import OpenAI as _OpenAI
+
                     self._llm_client = _OpenAI()
                 except ImportError:
-                    logger.warning(
-                        "openai package not installed. "
-                        "Install with: pip install openai"
-                    )
+                    logger.warning("openai package not installed. Install with: pip install openai")
 
     # ------------------------------------------------------------------
     # Public API
@@ -156,18 +154,14 @@ class SigmaRAGPipeline:
         self.index.check_ready()
 
         # ── Retrieve ──────────────────────────────────────────────────
-        result: RetrievalResult = self.retriever.retrieve(
-            question, n_sigma=n_sigma
-        )
+        result: RetrievalResult = self.retriever.retrieve(question, n_sigma=n_sigma)
 
         # ── Gate: no evidence → suppress generation ───────────────────
         if not result.has_evidence:
             from sigma_rag import stats as _stats
 
             far = _stats.sf(result.n_sigma)
-            answer = _NO_EVIDENCE_ANSWER.format(
-                n_sigma=result.n_sigma, far=far
-            )
+            answer = _NO_EVIDENCE_ANSWER.format(n_sigma=result.n_sigma, far=far)
             logger.info(
                 "No significant evidence for query %r (threshold=%.4f, n_sigma=%.1f)",
                 question[:60],
@@ -196,9 +190,7 @@ class SigmaRAGPipeline:
             context_used=context,
         )
 
-    def compare_with_topk(
-        self, question: str, k: int = 5
-    ) -> dict:
+    def compare_with_topk(self, question: str, k: int = 5) -> dict:
         """
         Run both σ-RAG and standard top-k on the same question.
 
@@ -280,46 +272,54 @@ class SigmaRAGPipeline:
 
     def _generate_anthropic(self, question: str, context: str) -> str:
         """Generate using the Anthropic Messages API."""
+        try:
+            import anthropic as _anthropic
+        except ImportError as exc:
+            raise ImportError(
+                "anthropic package required. Install with: pip install anthropic"
+            ) from exc
+
         if self._llm_client is None:
-            try:
-                import anthropic as _anthropic
-                self._llm_client = _anthropic.Anthropic()
-            except ImportError as exc:
-                raise ImportError(
-                    "anthropic package required. Install with: pip install anthropic"
-                ) from exc
+            self._llm_client = _anthropic.Anthropic()
+
+        client = self._llm_client
+        assert isinstance(client, _anthropic.Anthropic)
 
         user_message = (
             f"Context:\n{context}\n\n"
             f"Question: {question}\n\n"
             "Answer based only on the context above:"
         )
-        response = self._llm_client.messages.create(
+        response = client.messages.create(
             model=self.model,
             max_tokens=512,
             temperature=self.temperature,
             system=self.system_prompt,
             messages=[{"role": "user", "content": user_message}],
         )
-        return response.content[0].text.strip()
+        block = response.content[0]
+        assert isinstance(block, _anthropic.types.TextBlock)
+        return block.text.strip()
 
     def _generate_openai(self, question: str, context: str) -> str:
         """Generate using the OpenAI Chat Completions API."""
+        try:
+            from openai import OpenAI as _OpenAI
+        except ImportError as exc:
+            raise ImportError("openai package required. Install with: pip install openai") from exc
+
         if self._llm_client is None:
-            try:
-                from openai import OpenAI as _OpenAI
-                self._llm_client = _OpenAI()
-            except ImportError as exc:
-                raise ImportError(
-                    "openai package required. Install with: pip install openai"
-                ) from exc
+            self._llm_client = _OpenAI()
+
+        client = self._llm_client
+        assert isinstance(client, _OpenAI)
 
         user_message = (
             f"Context:\n{context}\n\n"
             f"Question: {question}\n\n"
             "Answer based only on the context above:"
         )
-        response = self._llm_client.chat.completions.create(
+        response = client.chat.completions.create(
             model=self.model,
             temperature=self.temperature,
             max_tokens=512,
@@ -328,7 +328,8 @@ class SigmaRAGPipeline:
                 {"role": "user", "content": user_message},
             ],
         )
-        return response.choices[0].message.content.strip()
+        content = response.choices[0].message.content
+        return content.strip() if content is not None else ""
 
     def _generate_echo(self, question: str, context: str) -> str:
         """Echo backend — returns context as-is (no LLM call).

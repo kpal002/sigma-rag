@@ -18,7 +18,6 @@ import abc
 import hashlib
 import logging
 import re
-from typing import Union
 
 import numpy as np
 
@@ -57,7 +56,8 @@ class Embedder(abc.ABC):
         Returns:
             1-D float32 array of shape (embedding_dim,), L2-normalised.
         """
-        return self.embed_batch([text])[0]
+        result: np.ndarray = self.embed_batch([text])[0]
+        return result
 
     @staticmethod
     def _l2_normalize(vectors: np.ndarray) -> np.ndarray:
@@ -74,7 +74,8 @@ class Embedder(abc.ABC):
         norms = np.linalg.norm(vectors, axis=1, keepdims=True)
         # Avoid division by zero for degenerate zero vectors
         norms = np.where(norms == 0, 1.0, norms)
-        return (vectors / norms).astype(np.float32)
+        normalized: np.ndarray = (vectors / norms).astype(np.float32)
+        return normalized
 
 
 class SentenceTransformerEmbedder(Embedder):
@@ -115,7 +116,8 @@ class SentenceTransformerEmbedder(Embedder):
         self.batch_size = batch_size
         logger.info("Loading SentenceTransformer model: %s", model_name)
         self._model = SentenceTransformer(model_name, device=device)
-        self.embedding_dim: int = self._model.get_sentence_embedding_dimension()
+        dim = self._model.get_sentence_embedding_dimension()
+        self.embedding_dim: int = dim if dim is not None else 384
         logger.info("Model loaded. Embedding dim: %d", self.embedding_dim)
 
     def embed_batch(self, texts: list[str]) -> np.ndarray:
@@ -168,8 +170,7 @@ class OpenAIEmbedder(Embedder):
             from openai import OpenAI
         except ImportError as exc:
             raise ImportError(
-                "openai package is required for OpenAIEmbedder. "
-                "Install it with: pip install openai"
+                "openai package is required for OpenAIEmbedder. Install it with: pip install openai"
             ) from exc
 
         self.model = model
@@ -200,9 +201,7 @@ class OpenAIEmbedder(Embedder):
         for i in range(0, len(texts), self.batch_size):
             batch = texts[i : i + self.batch_size]
             response = self._client.embeddings.create(model=self.model, input=batch)
-            batch_vecs = np.array(
-                [item.embedding for item in response.data], dtype=np.float32
-            )
+            batch_vecs = np.array([item.embedding for item in response.data], dtype=np.float32)
             all_embeddings.append(batch_vecs)
 
         vectors = np.vstack(all_embeddings)
@@ -212,6 +211,7 @@ class OpenAIEmbedder(Embedder):
 # ---------------------------------------------------------------------------
 # Hash-based local embedder (zero dependencies, useful for testing)
 # ---------------------------------------------------------------------------
+
 
 class HashEmbedder(Embedder):
     """
@@ -274,6 +274,7 @@ class HashEmbedder(Embedder):
 # Factory helper
 # ---------------------------------------------------------------------------
 
+
 def get_embedder(
     backend: str = "sentence_transformers",
     **kwargs,
@@ -302,6 +303,5 @@ def get_embedder(
         return HashEmbedder(**kwargs)
     else:
         raise ValueError(
-            f"Unknown backend {backend!r}. "
-            "Choose 'sentence_transformers', 'openai', or 'hash'."
+            f"Unknown backend {backend!r}. Choose 'sentence_transformers', 'openai', or 'hash'."
         )

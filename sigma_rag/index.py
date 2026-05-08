@@ -17,20 +17,18 @@ from __future__ import annotations
 
 import json
 import logging
-import pickle
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 
-from sigma_rag.embedder import Embedder, SentenceTransformerEmbedder, HashEmbedder
+from sigma_rag.embedder import Embedder, HashEmbedder, SentenceTransformerEmbedder
 from sigma_rag.noise_floor import NoiseFloor
 from sigma_rag.types import Chunk
 
 logger = logging.getLogger(__name__)
 
 # Type alias: a document is either a plain string or a (text, metadata) tuple
-Document = Union[str, tuple[str, dict]]
+Document = str | tuple[str, dict]
 
 
 class SigmaIndex:
@@ -63,8 +61,7 @@ class SigmaIndex:
     ) -> None:
         if chunk_overlap >= chunk_size:
             raise ValueError(
-                f"chunk_overlap ({chunk_overlap}) must be less than "
-                f"chunk_size ({chunk_size})."
+                f"chunk_overlap ({chunk_overlap}) must be less than chunk_size ({chunk_size})."
             )
 
         # Use SentenceTransformerEmbedder when available, fall back to HashEmbedder
@@ -99,7 +96,7 @@ class SigmaIndex:
         self,
         documents: list[Document],
         doc_ids: list[str] | None = None,
-    ) -> "SigmaIndex":
+    ) -> SigmaIndex:
         """
         Chunk and embed a list of documents, adding them to the index.
 
@@ -120,13 +117,12 @@ class SigmaIndex:
 
         if len(doc_ids) != len(documents):
             raise ValueError(
-                f"doc_ids length ({len(doc_ids)}) must match "
-                f"documents length ({len(documents)})."
+                f"doc_ids length ({len(doc_ids)}) must match documents length ({len(documents)})."
             )
 
         new_chunks: list[Chunk] = []
 
-        for doc_id, raw in zip(doc_ids, documents):
+        for doc_id, raw in zip(doc_ids, documents, strict=False):
             # Unpack (text, metadata) or plain string
             if isinstance(raw, tuple):
                 text, metadata = raw
@@ -154,7 +150,7 @@ class SigmaIndex:
         texts = [c.text for c in new_chunks]
         embeddings = self.embedder.embed_batch(texts)  # (n_new, d)
 
-        for chunk, emb in zip(new_chunks, embeddings):
+        for chunk, emb in zip(new_chunks, embeddings, strict=False):
             chunk.embedding = emb
 
         self._chunks.extend(new_chunks)
@@ -170,7 +166,7 @@ class SigmaIndex:
 
     def add_document(
         self, text: str, doc_id: str | None = None, metadata: dict | None = None
-    ) -> "SigmaIndex":
+    ) -> SigmaIndex:
         """
         Convenience method to add a single document.
 
@@ -190,7 +186,7 @@ class SigmaIndex:
     # Noise floor calibration
     # ------------------------------------------------------------------
 
-    def calibrate(self, n_pairs: int | None = None, seed: int = 42) -> "SigmaIndex":
+    def calibrate(self, n_pairs: int | None = None, seed: int = 42) -> SigmaIndex:
         """
         Fit the NoiseFloor on the current corpus embeddings.
 
@@ -208,9 +204,7 @@ class SigmaIndex:
             RuntimeError: If no documents have been added yet.
         """
         if self._embeddings_matrix is None or len(self._chunks) == 0:
-            raise RuntimeError(
-                "No documents in the index.  Call add_documents() first."
-            )
+            raise RuntimeError("No documents in the index.  Call add_documents() first.")
 
         doc_ids = [c.doc_id for c in self._chunks]
         n = n_pairs or self.noise_n_pairs
@@ -262,7 +256,8 @@ class SigmaIndex:
         if self._embeddings_matrix is None:
             raise RuntimeError("Index is empty.  Call add_documents() first.")
         # (n_chunks, d) @ (d,) → (n_chunks,)
-        return self._embeddings_matrix @ query_embedding
+        result: np.ndarray = self._embeddings_matrix @ query_embedding
+        return result
 
     # ------------------------------------------------------------------
     # Properties / accessors
@@ -334,9 +329,9 @@ class SigmaIndex:
         if not self._chunks:
             self._embeddings_matrix = None
             return
-        self._embeddings_matrix = np.stack(
-            [c.embedding for c in self._chunks], axis=0
-        ).astype(np.float32)
+        self._embeddings_matrix = np.stack([c.embedding for c in self._chunks], axis=0).astype(
+            np.float32
+        )
 
     def _get_unique_doc_ids(self) -> list[str]:
         """Return deduplicated list of doc_ids in insertion order."""
@@ -407,7 +402,7 @@ class SigmaIndex:
         logger.info("SigmaIndex saved to %s (%d chunks)", path, len(self._chunks))
 
     @classmethod
-    def load(cls, path: str | Path, embedder: Embedder | None = None) -> "SigmaIndex":
+    def load(cls, path: str | Path, embedder: Embedder | None = None) -> SigmaIndex:
         """Load an index saved with :meth:`save`.
 
         Args:
@@ -446,6 +441,7 @@ class SigmaIndex:
             emb_matrix = np.load(path / "embeddings.npy")
 
         from sigma_rag.types import Chunk
+
         for i, cd in enumerate(chunk_data):
             emb = emb_matrix[i] if emb_matrix is not None else np.zeros(1, dtype=np.float32)
             index._chunks.append(
@@ -469,6 +465,7 @@ class SigmaIndex:
             index.noise_floor.cross_doc_only = nf_state["cross_doc_only"]
             index.noise_floor._fitted = True
             from sigma_rag.noise_floor import NoiseFloorStats
+
             index.noise_floor.stats = NoiseFloorStats(**nf_state["stats"])
 
         logger.info("SigmaIndex loaded from %s (%d chunks)", path, len(index._chunks))

@@ -41,6 +41,7 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
+
 from sigma_rag import stats  # pure-numpy fallback; uses scipy when available
 
 logger = logging.getLogger(__name__)
@@ -124,7 +125,7 @@ class NoiseFloor:
         doc_ids: list[str] | None = None,
         n_pairs: int = 10_000,
         seed: int = 42,
-    ) -> "NoiseFloor":
+    ) -> NoiseFloor:
         """
         Estimate the null distribution from random document-pair similarities.
 
@@ -145,9 +146,7 @@ class NoiseFloor:
         """
         n = len(embeddings)
         if n < 10:
-            raise ValueError(
-                f"Need at least 10 embeddings to estimate noise floor, got {n}."
-            )
+            raise ValueError(f"Need at least 10 embeddings to estimate noise floor, got {n}.")
 
         rng = np.random.default_rng(seed)
 
@@ -162,8 +161,7 @@ class NoiseFloor:
 
         if self.sigma_ < 1e-8:
             logger.warning(
-                "Noise floor σ is near zero (%.2e). "
-                "All embeddings may be identical or nearly so.",
+                "Noise floor σ is near zero (%.2e). All embeddings may be identical or nearly so.",
                 self.sigma_,
             )
             self.sigma_ = 1e-6  # prevent division by zero downstream
@@ -288,6 +286,7 @@ class NoiseFloor:
     def summary(self) -> str:
         """Return a human-readable summary of the fitted noise floor."""
         self._check_fitted()
+        assert self.stats is not None
         far_2s = self.false_alarm_rate(2.0)
         far_3s = self.false_alarm_rate(3.0)
         return (
@@ -295,9 +294,9 @@ class NoiseFloor:
             f"  μ (noise mean)     : {self.mu_:.4f}\n"
             f"  σ (noise std)      : {self.sigma_:.4f}\n"
             f"  Threshold @ 2σ     : {self.threshold(2.0):.4f}  "
-            f"(FAR ≈ {far_2s*100:.2f}%)\n"
+            f"(FAR ≈ {far_2s * 100:.2f}%)\n"
             f"  Threshold @ 3σ     : {self.threshold(3.0):.4f}  "
-            f"(FAR ≈ {far_3s*100:.3f}%)\n"
+            f"(FAR ≈ {far_3s * 100:.3f}%)\n"
             f"  KS test p-value    : {self.stats.ks_p_value:.4f}  "
             f"({'OK' if self.stats.ks_p_value > 0.01 else 'WARNING: non-Gaussian'})\n"
             f"  Calibration pairs  : {self.stats.n_pairs}"
@@ -321,7 +320,10 @@ class NoiseFloor:
             logger.warning(
                 "Corpus has only %d chunks (%d unique pairs). "
                 "Requested %d noise pairs; using %d with replacement.",
-                n, max_possible, n_pairs, effective,
+                n,
+                max_possible,
+                n_pairs,
+                effective,
             )
 
         sims: list[float] = []
@@ -339,9 +341,7 @@ class NoiseFloor:
             attempts += batch
 
         if len(sims) < effective:
-            logger.warning(
-                "Could only collect %d random pairs (wanted %d).", len(sims), effective
-            )
+            logger.warning("Could only collect %d random pairs (wanted %d).", len(sims), effective)
 
         return np.array(sims[:effective], dtype=np.float32)
 
@@ -379,9 +379,7 @@ class NoiseFloor:
                 n_pairs,
             )
             # Fill with random pairs for the remainder
-            remainder = self._sample_random_pairs(
-                embeddings, n_pairs - len(sims), rng
-            )
+            remainder = self._sample_random_pairs(embeddings, n_pairs - len(sims), rng)
             sims.extend(remainder.tolist())
 
         return np.array(sims[:n_pairs], dtype=np.float32)
@@ -389,6 +387,4 @@ class NoiseFloor:
     def _check_fitted(self) -> None:
         """Raise if fit() has not been called yet."""
         if not self._fitted:
-            raise RuntimeError(
-                "NoiseFloor is not fitted yet. Call .fit(embeddings) first."
-            )
+            raise RuntimeError("NoiseFloor is not fitted yet. Call .fit(embeddings) first.")
