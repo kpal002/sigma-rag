@@ -1,0 +1,11 @@
+# σ-RAG requirements
+# Core
+numpy>=1.24
+scipy>=1.10
+
+# Embeddings (local, no API key needed)
+sentence-transformers>=2.7
+
+# Optional: LLM backends
+anthropic>=0.40       # for --llm anthropic
+openai>=1.30          # for --llm openai

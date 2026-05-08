@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sigma-rag"
+version = "0.1.0"
+description = "Significance-threshold retrieval for RAG pipelines — stop injecting noise into your LLM context"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Kuntal Pal", email = "kuntal.beehiveai@gmail.com" }
+]
+keywords = ["rag", "retrieval-augmented-generation", "llm", "embeddings", "nlp", "information-retrieval"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# Recommended: local embeddings (no API key needed)
+local = [
+    "sentence-transformers>=2.7",
+]
+# Production: cloud embeddings + LLM backends
+openai = [
+    "openai>=1.30",
+]
+anthropic = [
+    "anthropic>=0.40",
+]
+# Optional: faster/better statistics
+scipy = [
+    "scipy>=1.10",
+]
+# Development toolchain
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "ipykernel>=6.29",
+    "matplotlib>=3.8",
+    "pandas>=2.0",
+    "notebook>=7.0",
+]
+# Install everything
+all = [
+    "sentence-transformers>=2.7",
+    "openai>=1.30",
+    "anthropic>=0.40",
+    "scipy>=1.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/kpal002"
+Repository = "https://github.com/kpal002/sigma-rag"
+Documentation = "https://github.com/kpal002/sigma-rag#readme"
+"Bug Tracker" = "https://github.com/kpal002/sigma-rag/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sigma_rag*"]
+
+# ---------------------------------------------------------------------------
+# Ruff — linting + formatting
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "PT"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]  # allow assert in tests
+
+# ---------------------------------------------------------------------------
+# Mypy — static type checking
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+strict = false
+ignore_missing_imports = true
+warn_return_any = true
+warn_unused_configs = true
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+markers = [
+    "slow: marks tests as slow (use -m 'not slow' to skip)",
+    "integration: marks tests that require API keys",
+]
