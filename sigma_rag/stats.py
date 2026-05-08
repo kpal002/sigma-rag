@@ -15,8 +15,8 @@ import math
 
 import numpy as np
 
-
 # ── Normal CDF (Φ) ─────────────────────────────────────────────────────────
+
 
 def norm_cdf(x: float) -> float:
     """
@@ -51,6 +51,7 @@ def norm_sf(x: float) -> float:
 
 # ── KS test (one-sample, vs fitted normal) ─────────────────────────────────
 
+
 def kstest_norm(samples: np.ndarray, mu: float, sigma: float) -> tuple[float, float]:
     """
     One-sample Kolmogorov-Smirnov test against N(mu, sigma^2).
@@ -79,8 +80,8 @@ def kstest_norm(samples: np.ndarray, mu: float, sigma: float) -> tuple[float, fl
     theoretical = np.array([norm_cdf(float(zi)) for zi in z])
 
     # Empirical CDF
-    empirical_above = np.arange(1, n + 1) / n   # F_n(x⁺)
-    empirical_below = np.arange(0, n) / n        # F_n(x⁻)
+    empirical_above = np.arange(1, n + 1) / n  # F_n(x⁺)
+    empirical_below = np.arange(0, n) / n  # F_n(x⁻)
 
     # KS statistic: max deviation
     ks_stat = float(
@@ -129,10 +130,12 @@ def _kolmogorov_p(t: float) -> float:
 
 # ── Unified interface (uses scipy when available) ───────────────────────────
 
+
 def _try_scipy():
     """Return scipy.stats if available, else None."""
     try:
         from scipy import stats
+
         return stats
     except ImportError:
         return None
@@ -171,9 +174,7 @@ def sf(x: float) -> float:
     return norm_sf(x)
 
 
-def ks_test(
-    samples: np.ndarray, mu: float, sigma: float
-) -> tuple[float, float]:
+def ks_test(samples: np.ndarray, mu: float, sigma: float) -> tuple[float, float]:
     """
     One-sample KS test vs N(mu, sigma^2) — uses scipy when available.
 

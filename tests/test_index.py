@@ -12,10 +12,10 @@ import pytest
 from sigma_rag import SigmaIndex
 from sigma_rag.embedder import HashEmbedder
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def empty_index() -> SigmaIndex:
@@ -46,6 +46,7 @@ SAMPLE_DOCS = [
 # Ingestion tests
 # ---------------------------------------------------------------------------
 
+
 class TestSigmaIndexIngestion:
     """Tests for add_documents() and add_document()."""
 
@@ -75,7 +76,7 @@ class TestSigmaIndexIngestion:
 
     def test_mismatched_doc_ids_raises(self, empty_index: SigmaIndex) -> None:
         """Passing wrong number of doc_ids should raise ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="doc_ids length"):
             empty_index.add_documents(["A", "B", "C"], doc_ids=["only_one"])
 
     def test_incremental_add(self, empty_index: SigmaIndex) -> None:
@@ -97,6 +98,7 @@ class TestSigmaIndexIngestion:
 # ---------------------------------------------------------------------------
 # Chunking tests
 # ---------------------------------------------------------------------------
+
 
 class TestChunking:
     """Tests for the _chunk_text internal method."""
@@ -141,6 +143,7 @@ class TestChunking:
 # Calibration tests
 # ---------------------------------------------------------------------------
 
+
 class TestCalibration:
     """Tests for calibrate() and check_ready()."""
 
@@ -172,6 +175,7 @@ class TestCalibration:
 # Embedding matrix tests
 # ---------------------------------------------------------------------------
 
+
 class TestEmbeddingMatrix:
     """Tests for the internal embedding matrix."""
 
@@ -198,7 +202,8 @@ class TestEmbeddingMatrix:
         empty_index.calibrate(n_pairs=100, seed=0)
         q_emb = empty_index.query_embeddings("LIGO laser interferometer")
         sims = empty_index.cosine_similarities(q_emb)
-        assert np.all(sims >= -1.01) and np.all(sims <= 1.01)
+        assert np.all(sims >= -1.01)
+        assert np.all(sims <= 1.01)
 
     def test_repr(self, empty_index: SigmaIndex) -> None:
         """__repr__ should return a non-empty informative string."""

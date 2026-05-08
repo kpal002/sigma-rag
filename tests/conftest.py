@@ -10,11 +10,9 @@ test suite runs offline without any API keys or model downloads.
 from __future__ import annotations
 
 import pytest
-import numpy as np
 
 from sigma_rag import SigmaIndex
 from sigma_rag.embedder import HashEmbedder
-
 
 # ---------------------------------------------------------------------------
 # Sample corpora
@@ -103,6 +101,7 @@ COOKING_DOCS = [
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def hash_embedder() -> HashEmbedder:
     """A deterministic HashEmbedder — no downloads required."""
@@ -121,7 +120,7 @@ def physics_index(hash_embedder: HashEmbedder) -> SigmaIndex:
         chunk_size=512,
         chunk_overlap=64,
         n_sigma=2.0,
-        noise_n_pairs=500,   # small for speed in tests
+        noise_n_pairs=500,  # small for speed in tests
     )
     index.add_documents(PHYSICS_DOCS)
     index.calibrate(seed=0)

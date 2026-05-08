@@ -18,12 +18,11 @@ import numpy as np
 import pytest
 
 from sigma_rag.noise_floor import NoiseFloor
-from sigma_rag.embedder import HashEmbedder
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_embeddings(n: int = 30, dim: int = 128, seed: int = 0) -> tuple[np.ndarray, list[str]]:
     """
@@ -44,6 +43,7 @@ def _make_embeddings(n: int = 30, dim: int = 128, seed: int = 0) -> tuple[np.nda
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestNoiseFloorFit:
     """Test that NoiseFloor.fit() correctly populates internal state."""
@@ -123,10 +123,12 @@ class TestNoiseFloorThreshold:
 
     def test_p_value_range(self) -> None:
         """p-value must be in [0, 1]."""
-        for sim in [self.nf.mu_ - 2 * self.nf.sigma_,
-                    self.nf.mu_,
-                    self.nf.mu_ + 2 * self.nf.sigma_,
-                    self.nf.mu_ + 5 * self.nf.sigma_]:
+        for sim in [
+            self.nf.mu_ - 2 * self.nf.sigma_,
+            self.nf.mu_,
+            self.nf.mu_ + 2 * self.nf.sigma_,
+            self.nf.mu_ + 5 * self.nf.sigma_,
+        ]:
             p = self.nf.p_value(sim)
             assert 0.0 <= p <= 1.0
 

@@ -23,12 +23,12 @@ Quick start
 >>> print(response.answer)
 """
 
-from sigma_rag.types import Chunk, ScoredChunk, RetrievalResult, RAGResponse
-from sigma_rag.embedder import Embedder, SentenceTransformerEmbedder, OpenAIEmbedder, HashEmbedder
-from sigma_rag.noise_floor import NoiseFloor
+from sigma_rag.embedder import Embedder, HashEmbedder, OpenAIEmbedder, SentenceTransformerEmbedder
 from sigma_rag.index import SigmaIndex
-from sigma_rag.retriever import SigmaRetriever
+from sigma_rag.noise_floor import NoiseFloor
 from sigma_rag.pipeline import SigmaRAGPipeline
+from sigma_rag.retriever import SigmaRetriever
+from sigma_rag.types import Chunk, RAGResponse, RetrievalResult, ScoredChunk
 
 __all__ = [
     "Chunk",

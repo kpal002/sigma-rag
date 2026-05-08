@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Protocol (interface) — makes it easy to swap retrieval strategies
 # ------------------------------------------------------------------
 
+
 class Retriever(Protocol):
     """
     Protocol that all retriever implementations must satisfy.
@@ -46,6 +47,7 @@ class Retriever(Protocol):
 # ------------------------------------------------------------------
 # σ-RAG retriever — significance-filtered
 # ------------------------------------------------------------------
+
 
 class SigmaRetriever:
     """
@@ -134,9 +136,7 @@ class SigmaRetriever:
 
         # ── Step 4: adaptive threshold relaxation (optional) ─────────
         if self.min_results > 0:
-            scored, effective_sigma = self._maybe_relax_threshold(
-                scored, effective_sigma
-            )
+            scored, effective_sigma = self._maybe_relax_threshold(scored, effective_sigma)
 
         # ── Step 5: partition into significant / noise ────────────────
         significant = [sc for sc in scored if sc.significant]
@@ -147,8 +147,7 @@ class SigmaRetriever:
         significant = significant[: self.max_results]
 
         logger.debug(
-            "retrieve() | query=%r | sigma=%.1f | thresh=%.4f | "
-            "significant=%d | noise=%d",
+            "retrieve() | query=%r | sigma=%.1f | thresh=%.4f | significant=%d | noise=%d",
             query[:50],
             effective_sigma,
             nf.threshold(effective_sigma),
@@ -170,9 +169,7 @@ class SigmaRetriever:
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _score_chunks(
-        self, sims: np.ndarray, n_sigma: float
-    ) -> list[ScoredChunk]:
+    def _score_chunks(self, sims: np.ndarray, n_sigma: float) -> list[ScoredChunk]:
         """Convert raw similarity array to a list of ScoredChunk objects."""
         nf = self.index.noise_floor
         threshold = nf.threshold(n_sigma)
@@ -241,6 +238,7 @@ class SigmaRetriever:
 # Standard top-k retriever (baseline for benchmarking)
 # ------------------------------------------------------------------
 
+
 class TopKRetriever:
     """
     Standard top-k retriever (no significance filtering).
@@ -282,7 +280,7 @@ class TopKRetriever:
 
         # Score all chunks
         all_scored: list[ScoredChunk] = []
-        for chunk, sim in zip(self.index.chunks, sims):
+        for chunk, sim in zip(self.index.chunks, sims, strict=False):
             sim_f = float(sim)
             all_scored.append(
                 ScoredChunk(
@@ -300,8 +298,8 @@ class TopKRetriever:
 
         return RetrievalResult(
             query=query,
-            significant=top_k,        # all returned chunks labelled significant
-            noise=[],                  # nothing discarded
+            significant=top_k,  # all returned chunks labelled significant
+            noise=[],  # nothing discarded
             threshold=nf.threshold(self.index.n_sigma),
             n_sigma=self.index.n_sigma,
             noise_mu=nf.mu_,

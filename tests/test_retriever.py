@@ -107,6 +107,7 @@ class TestSigmaRetriever:
     def test_retrieve_before_calibration_raises(self) -> None:
         """Retrieving from an uncalibrated index should raise RuntimeError."""
         from sigma_rag.embedder import HashEmbedder
+
         index = SigmaIndex(embedder=HashEmbedder(), noise_n_pairs=50)
         index.add_documents(["Some document text here."])
         retriever = SigmaRetriever(index)
@@ -134,6 +135,7 @@ class TestTopKRetriever:
     def test_topk_returns_fewer_than_k_if_small_corpus(self) -> None:
         """If corpus has fewer than k chunks, return all available."""
         from sigma_rag.embedder import HashEmbedder
+
         small_docs = [f"Document {i} about a unique topic." for i in range(12)]
         index = SigmaIndex(embedder=HashEmbedder(embedding_dim=64), noise_n_pairs=50)
         index.add_documents(small_docs)

@@ -27,7 +27,7 @@ class TestPipelineEcho:
         """A SigmaRAGPipeline backed by the echo LLM (offline)."""
         return SigmaRAGPipeline(
             physics_index,
-            n_sigma=1.0,    # permissive threshold for answerable queries
+            n_sigma=1.0,  # permissive threshold for answerable queries
             max_results=5,
             llm="echo",
         )
@@ -51,6 +51,7 @@ class TestPipelineEcho:
     def test_response_has_retrieval(self, pipeline: SigmaRAGPipeline) -> None:
         """response.retrieval should be a RetrievalResult."""
         from sigma_rag.types import RetrievalResult
+
         response = pipeline.query("gravitational waves")
         assert isinstance(response.retrieval, RetrievalResult)
 
@@ -114,6 +115,7 @@ class TestPipelineUncalibrated:
     def test_query_on_uncalibrated_index_raises(self) -> None:
         """pipeline.query() on an uncalibrated index should raise RuntimeError."""
         from sigma_rag.embedder import HashEmbedder
+
         index = SigmaIndex(embedder=HashEmbedder(), noise_n_pairs=50)
         index.add_documents(["Some text."])
         pipeline = SigmaRAGPipeline(index, llm="echo")

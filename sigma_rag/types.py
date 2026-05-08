@@ -12,7 +12,7 @@ from those consistent with the background-only hypothesis.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+
 import numpy as np
 
 
@@ -104,7 +104,7 @@ class RetrievalResult:
         return len(self.significant) > 0
 
     @property
-    def best(self) -> Optional[ScoredChunk]:
+    def best(self) -> ScoredChunk | None:
         """Highest-scoring significant chunk, or None."""
         return self.significant[0] if self.significant else None
 
@@ -142,7 +142,4 @@ class RAGResponse:
     context_used: str
 
     def __repr__(self) -> str:  # noqa: D105
-        return (
-            f"RAGResponse(has_evidence={self.has_evidence}, "
-            f"answer={self.answer[:80]!r}...)"
-        )
+        return f"RAGResponse(has_evidence={self.has_evidence}, answer={self.answer[:80]!r}...)"

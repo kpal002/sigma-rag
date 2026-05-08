@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from sigma_rag.embedder import HashEmbedder, Embedder, get_embedder
+from sigma_rag.embedder import Embedder, HashEmbedder, get_embedder
 
 
 class TestHashEmbedder:
@@ -77,8 +77,7 @@ class TestHashEmbedder:
         sim_related = float(gw1 @ gw2)
         sim_unrelated = float(gw1 @ cooking)
         assert sim_related > sim_unrelated, (
-            f"Expected related similarity ({sim_related:.3f}) > "
-            f"unrelated ({sim_unrelated:.3f})"
+            f"Expected related similarity ({sim_related:.3f}) > unrelated ({sim_unrelated:.3f})"
         )
 
     def test_get_embedder_factory_hash(self) -> None:
